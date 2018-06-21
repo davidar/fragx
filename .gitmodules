@@ -1,0 +1,6 @@
+[submodule "Shader_Minifier"]
+	path = Shader_Minifier
+	url = https://github.com/laurentlb/Shader_Minifier
+[submodule "glsl"]
+	path = glsl
+	url = https://github.com/davidar/glsl.git
