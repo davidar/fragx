@@ -64,9 +64,12 @@ def parse(fname):
             uniform = decl.strip()[:-1].split()[-1]
             ctyp, args = ctrl.strip()[:-1].split('[')
             params = {}
-            for arg in args.split(','):
-                key, val = arg.split(':')
-                params[key.strip()] = val.strip()
+            for i, arg in enumerate(args.split(',')):
+                if ':' in arg:
+                    key, val = arg.split(':')
+                    params[key.strip()] = val.strip()
+                else:
+                    params[i] = arg.strip()
             if ctyp == 'buffer':
                 xbuf = os.path.join(os.path.dirname(fname), params['xbuf'])
                 if xbuf not in xbuf_src:
