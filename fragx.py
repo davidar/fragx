@@ -4,6 +4,8 @@ import subprocess
 import sys
 import tempfile
 
+DIR = os.path.dirname(os.path.realpath(__file__))
+
 prelude = '''
 int main(void) {
   int width = 800, height = 600;
@@ -84,7 +86,7 @@ def shader(fname, src):
     with open(fname, 'w') as f:
         f.write('#version 300 es\n')
         f.write(src)
-    subprocess.run(['mono', 'shader_minifier.exe', '--no-renaming', fname, '-o', fname + '.h'])
+    subprocess.run(['mono', os.path.join(DIR, 'bin', 'shader_minifier.exe'), '--no-renaming', fname, '-o', fname + '.h'])
     with open(fname + '.h', 'r') as f:
         return f.read()
 
@@ -101,7 +103,7 @@ def main():
     xbuf_keys.extend(xbuf_src.keys())
     xbuf_keys.sort()
     with tempfile.TemporaryDirectory() as tmpdirname:
-        with open('fragx.h', 'r') as f: print(f.read())
+        with open(os.path.join(DIR, 'fragx.h'), 'r') as f: print(f.read())
         print(shader(os.path.join(tmpdirname, 'main.frag'), src))
         for k, fname in enumerate(xbuf_keys):
             print(shader(os.path.join(tmpdirname, 'xbuf{}.frag'.format(k)), xbuf_src[fname]))
