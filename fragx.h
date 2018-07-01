@@ -1,5 +1,6 @@
 #include <GLES3/gl3.h>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 
 GLuint LoadShader(const char *shaderSrc, GLenum type) {
   GLuint shader = glCreateShader(type);
@@ -49,15 +50,34 @@ GLuint LoadProgram(const char *fragSrc) {
   return program;
 }
 
-GLuint Texture(GLsizei width, GLsizei height, GLint wrap) {
+GLuint Texture(GLsizei width, GLsizei height, GLint wrap, GLenum type, const GLvoid *data) {
   GLuint texture; glGenTextures(1, &texture);
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+  glTexImage2D(GL_TEXTURE_2D, 0, (type == GL_FLOAT) ? GL_RGBA32F : GL_RGBA, width, height, 0, GL_RGBA, type, data);
   glBindTexture(GL_TEXTURE_2D, 0);
+  return texture;
+}
+
+GLuint TextureImage(void *mem, int size, GLint wrap) {
+  SDL_RWops *rw = SDL_RWFromMem(mem, size);
+  SDL_Surface *image = IMG_Load_RW(rw, 1);
+  if (image == NULL) {
+    SDL_Log("Error loading image");
+    return 0;
+  }
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+  Uint32 pixel_format = SDL_PIXELFORMAT_RGBA8888;
+#else
+  Uint32 pixel_format = SDL_PIXELFORMAT_ABGR8888;
+#endif
+  SDL_Surface *optimised = SDL_ConvertSurfaceFormat(image, pixel_format, 0);
+  SDL_FreeSurface(image);
+  GLuint texture = Texture(optimised->w, optimised->h, wrap, GL_UNSIGNED_BYTE, optimised->pixels);
+  SDL_FreeSurface(optimised);
   return texture;
 }
 

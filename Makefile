@@ -1,4 +1,4 @@
-LDLIBS = -lGL -lSDL2
+LDLIBS = -lGL -lSDL2 -lSDL2_image
 
 bin/shader_minifier.exe:
 	wget https://github.com/laurentlb/Shader_Minifier/releases/download/1.1.6/shader_minifier.exe -O $@

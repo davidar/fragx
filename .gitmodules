@@ -7,3 +7,6 @@
 [submodule "glslang"]
 	path = glslang
 	url = https://github.com/KhronosGroup/glslang.git
+[submodule "synthclipse"]
+	path = synthclipse
+	url = https://git.code.sf.net/p/synthclipse/code

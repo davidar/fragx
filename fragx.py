@@ -15,8 +15,8 @@ int main(void) {
 xbuf_init = '''
   GLuint program{k} = LoadProgram(xbuf{k}_frag);
   GLuint texture{k}[2];
-  texture{k}[0] = Texture(width, height, {wrap});
-  texture{k}[1] = Texture(width, height, {wrap});
+  texture{k}[0] = Texture(width, height, {wrap}, GL_FLOAT, NULL);
+  texture{k}[1] = Texture(width, height, {wrap}, GL_FLOAT, NULL);
   GLuint framebuffer{k}[2];
   framebuffer{k}[0] = Framebuffer(texture{k}[0]);
   framebuffer{k}[1] = Framebuffer(texture{k}[1]);
@@ -48,6 +48,9 @@ xbuf_wrap = {}
 xbuf_map = {}
 xbuf_keys = []
 
+textures = []
+tex_map = {}
+
 def include(fname):
     src = []
     with open(fname, 'r') as f:
@@ -61,6 +64,7 @@ def include(fname):
 
 def parse(fname):
     xbuf_map[fname] = {}
+    tex_map[fname] = {}
     src = include(fname)
     for line in src:
         if '//!' in line:
@@ -81,6 +85,10 @@ def parse(fname):
                     xbuf_src[xbuf] = parse(xbuf)
                 if 'wrap' in params: xbuf_wrap[xbuf] = params['wrap']
                 xbuf_map[fname][uniform] = xbuf
+            elif ctyp == 'texture':
+                texture = params[0].replace('"', '')
+                if texture not in textures: textures.append(texture)
+                tex_map[fname][uniform] = textures.index(texture)
     return ''.join(src)
 
 def shader(fname, src):
@@ -98,7 +106,9 @@ def shader(fname, src):
 
 def render(fname, k=''):
     print(run_program.format(k=k))
-    for u, uniform in enumerate(xbuf_map[fname]):
+    for u, uniform in enumerate(tex_map[fname]):
+        print('    UniformTexture(glGetUniformLocation(program{}, "{}"), {}, image{});'.format(k, uniform, u, tex_map[fname][uniform]))
+    for u, uniform in enumerate(xbuf_map[fname], len(tex_map[fname])):
         j = xbuf_keys.index(xbuf_map[fname][uniform])
         i = 'i' if k == '' or k > j else '(i+1)'
         print('    UniformTexture(glGetUniformLocation(program{}, "{}"), {}, texture{}[{}%2]);'.format(k, uniform, u, j, i))
@@ -110,13 +120,23 @@ def main():
     xbuf_keys.sort()
     with tempfile.TemporaryDirectory() as tmpdirname:
         with open(os.path.join(DIR, 'fragx.h'), 'r') as f: print(f.read())
+        for i, fname in enumerate(textures):
+            if not os.path.isfile(fname):
+                fname = os.path.join(DIR, 'synthclipse', 'org.synthclipse.include', 'include', fname)
+            with open(fname, 'rb') as f:
+                data = ','.join(str(b) for b in f.read())
+            print('static unsigned char image{}_data[] = {{{}}};'.format(i, data))
         print(shader(os.path.join(tmpdirname, 'main.frag'), src))
         for k, fname in enumerate(xbuf_keys):
             print(shader(os.path.join(tmpdirname, 'xbuf{}.frag'.format(k)), xbuf_src[fname]))
+
         print(prelude)
+        for i, fname in enumerate(textures):
+            print('  GLuint image{i} = TextureImage(image{i}_data, sizeof(image{i}_data), GL_REPEAT);'.format(i=i))
         print('  GLuint program = LoadProgram(main_frag);')
         for k, fname in enumerate(xbuf_keys):
             print(xbuf_init.format(k=k, wrap=xbuf_wrap.get(fname, 'GL_REPEAT')))
+
         print('  GLfloat time = 0;')
         print('  for (int i = 0;; i++) {')
         print('    GLfloat time_delta = 1e-3 * SDL_GetTicks() - time;')
