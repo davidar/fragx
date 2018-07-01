@@ -25,7 +25,8 @@ xbuf_init = '''
 run_program = '''
     glUseProgram(program{k});
     glUniform3f(glGetUniformLocation(program{k}, "iResolution"), width, height, 1);
-    glUniform1f(glGetUniformLocation(program{k}, "iTime"), 1e-3 * SDL_GetTicks());
+    glUniform1f(glGetUniformLocation(program{k}, "iTimeDelta"), time_delta);
+    glUniform1f(glGetUniformLocation(program{k}, "iTime"), time);
     glUniform1i(glGetUniformLocation(program{k}, "iFrame"), i);
 '''
 
@@ -116,7 +117,10 @@ def main():
         print('  GLuint program = LoadProgram(main_frag);')
         for k, fname in enumerate(xbuf_keys):
             print(xbuf_init.format(k=k, wrap=xbuf_wrap.get(fname, 'GL_REPEAT')))
+        print('  GLfloat time = 0;')
         print('  for (int i = 0;; i++) {')
+        print('    GLfloat time_delta = 1e-3 * SDL_GetTicks() - time;')
+        print('    time += time_delta;')
         for k, fname in enumerate(xbuf_keys):
             print('    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer{k}[i%2]);'.format(k=k))
             render(fname, k)
