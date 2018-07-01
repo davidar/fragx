@@ -83,9 +83,14 @@ def parse(fname):
     return ''.join(src)
 
 def shader(fname, src):
+    src = '#version 300 es\n' + src
     with open(fname, 'w') as f:
-        f.write('#version 300 es\n')
         f.write(src)
+    try:
+        subprocess.run([os.path.join(DIR, 'bin', 'glslangValidator'), fname], stdout=sys.stderr, check=True)
+    except subprocess.CalledProcessError:
+        for no, line in enumerate(src.split('\n'), 1):
+            sys.stderr.write('{:>4} {}\n'.format(no, line))
     subprocess.run(['mono', os.path.join(DIR, 'bin', 'shader_minifier.exe'), '--no-renaming', fname, '-o', fname + '.h'])
     with open(fname + '.h', 'r') as f:
         return f.read()

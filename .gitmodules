@@ -4,3 +4,6 @@
 [submodule "glsl"]
 	path = glsl
 	url = https://github.com/davidar/glsl.git
+[submodule "glslang"]
+	path = glslang
+	url = https://github.com/KhronosGroup/glslang.git
