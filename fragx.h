@@ -2,23 +2,24 @@
 #include <SDL2/SDL.h>
 
 GLuint LoadShader(const char *shaderSrc, GLenum type) {
-   GLuint shader = glCreateShader(type);
-   if (shader == 0) return 0;
-   glShaderSource(shader, 1, &shaderSrc, NULL);
-   glCompileShader(shader);
-   GLint compiled; glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-   if (!compiled) {
-      GLint infoLen = 0; glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
-      if (infoLen > 1) {
-         char *infoLog = malloc(sizeof(char) * infoLen);
-         glGetShaderInfoLog(shader, infoLen, NULL, infoLog);
-         SDL_Log("Error compiling shader: %s", infoLog);
-         free(infoLog);
-      }
-      glDeleteShader(shader);
-      return 0;
-   }
-   return shader;
+  GLuint shader = glCreateShader(type);
+  if (shader == 0) return 0;
+  glShaderSource(shader, 1, &shaderSrc, NULL);
+  glCompileShader(shader);
+  GLint compiled; glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+  if (!compiled) {
+    SDL_Log("Error compiling shader");
+    GLint infoLen = 0; glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
+    if (infoLen > 1) {
+      char *infoLog = malloc(sizeof(char) * infoLen);
+      glGetShaderInfoLog(shader, infoLen, NULL, infoLog);
+      SDL_Log("%s", infoLog);
+      free(infoLog);
+    }
+    glDeleteShader(shader);
+    return 0;
+  }
+  return shader;
 }
 
 GLuint LoadProgram(const char *fragSrc) {
@@ -32,11 +33,12 @@ GLuint LoadProgram(const char *fragSrc) {
   glLinkProgram(program);
   GLint linked; glGetProgramiv(program, GL_LINK_STATUS, &linked);
   if (!linked) {
+    SDL_Log("Error linking program");
     GLint infoLen = 0; glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLen);
     if (infoLen > 1) {
       char *infoLog = malloc(sizeof(char) * infoLen);
       glGetProgramInfoLog(program, infoLen, NULL, infoLog);
-      SDL_Log("Error linking program: %s", infoLog);
+      SDL_Log("%s", infoLog);
       free(infoLog);
     }
     glDeleteProgram(program);
@@ -55,6 +57,7 @@ GLuint Texture(GLsizei width, GLsizei height, GLint wrap) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+  glBindTexture(GL_TEXTURE_2D, 0);
   return texture;
 }
 
@@ -70,9 +73,9 @@ GLuint Framebuffer(GLuint texture) {
 }
 
 void UniformTexture(GLint location, GLint i, GLuint texture) {
-    glActiveTexture(GL_TEXTURE0 + i);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glUniform1i(location, i);
+  glActiveTexture(GL_TEXTURE0 + i);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glUniform1i(location, i);
 }
 
 static const GLfloat quad_vertices[] = {

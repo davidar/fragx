@@ -41,6 +41,7 @@ eventloop = '''
 '''
 
 xbuf_src = {}
+xbuf_wrap = {}
 xbuf_map = {}
 xbuf_keys = []
 
@@ -75,6 +76,7 @@ def parse(fname):
                 if xbuf not in xbuf_src:
                     xbuf_src[xbuf] = None # prevent infinite recursion
                     xbuf_src[xbuf] = parse(xbuf)
+                if 'wrap' in params: xbuf_wrap[xbuf] = params['wrap']
                 xbuf_map[fname][uniform] = xbuf
     return ''.join(src)
 
@@ -82,15 +84,16 @@ def shader(fname, src):
     with open(fname, 'w') as f:
         f.write('#version 300 es\n')
         f.write(src)
-    subprocess.run(['mono', 'shader_minifier.exe', '--preserve-externals', fname, '-o', fname + '.h'])
+    subprocess.run(['mono', 'shader_minifier.exe', '--no-renaming', fname, '-o', fname + '.h'])
     with open(fname + '.h', 'r') as f:
         return f.read()
 
 def render(fname, k=''):
     print(run_program.format(k=k))
-    for uniform in xbuf_map[fname]:
+    for u, uniform in enumerate(xbuf_map[fname]):
         j = xbuf_keys.index(xbuf_map[fname][uniform])
-        print('    UniformTexture(glGetUniformLocation(program{}, "{}"), 0, texture{}[(i+1)%2]);'.format(k, uniform, j))
+        i = 'i' if k == '' or k > j else '(i+1)'
+        print('    UniformTexture(glGetUniformLocation(program{}, "{}"), {}, texture{}[{}%2]);'.format(k, uniform, u, j, i))
     print('    glDrawArrays(GL_TRIANGLES, 0, 6);')
 
 def main():
@@ -105,7 +108,7 @@ def main():
         print(prelude)
         print('  GLuint program = LoadProgram(main_frag);')
         for k, fname in enumerate(xbuf_keys):
-            print(xbuf_init.format(k=k, wrap='GL_REPEAT'))
+            print(xbuf_init.format(k=k, wrap=xbuf_wrap.get(fname, 'GL_REPEAT')))
         print('  for (int i = 0;; i++) {')
         for k, fname in enumerate(xbuf_keys):
             print('    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer{k}[i%2]);'.format(k=k))
