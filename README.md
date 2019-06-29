@@ -1,5 +1,5 @@
 # fragx
-GLSL Fragment Shader Executable Compiler
+[GLSL Fragment Shader Executable](http://synthclipse.sourceforge.net/user_guide/fragx/fragx.html) Compiler
 
 Use `make` to compile the examples, eg:
 
